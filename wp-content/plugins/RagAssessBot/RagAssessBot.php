@@ -28,19 +28,6 @@ add_action('wp_enqueue_scripts', 'rag_bot_scripts');
 
 // Add the chatbot container to the body
 function rag_bot_body_container() {
-    echo '<div id="chatbot-container" class="closed">
-           <div id="chatbot-header">
-               <img src="' . plugin_dir_url(__FILE__) . 'assets/img/agent-01.png" alt="Chatbot Icon" id="chatbot-icon">
-           </div>
-           <div id="chat-interface" style="display: none;">
-               <div id="chat-log"></div>
-               <div id="chat-input-container">
-                   <input type="text" id="user-input" placeholder="Type your message here..."/>
-                   <button id="send-button">Send</button>
-               </div>
-           </div>
-         </div>';
+    include plugin_dir_path(__FILE__) . 'templates/chatbot-template.php';
 }
 add_action('wp_body_open', 'rag_bot_body_container');
-
-?>
