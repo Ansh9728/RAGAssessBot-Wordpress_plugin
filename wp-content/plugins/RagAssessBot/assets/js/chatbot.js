@@ -1,5 +1,27 @@
 
 jQuery(document).ready(function($) {
+
+    // function to send the site url to backend
+    function sendSiteUrl(){
+        $.ajax({
+            url:"http://127.0.0.1:8000/site",
+            type:'GET',
+            contentType:'application/json',
+            data: JSON.stringify({
+                site_url:chatbotAjax.site_url
+            }),
+
+            success: function(response){
+                console.log("site url send succussfully",response)
+            },
+            error:function(error){
+                console.error("Error sending the site url", error)
+            }
+        });
+    }
+
+    sendSiteUrl();
+
     const chatbotContainer = $('#chatbot-container');
     const chatbotIcon = $('#chatbot-icon');
     const chatInterface = $('#chat-interface');
@@ -33,6 +55,7 @@ jQuery(document).ready(function($) {
         // Send the user message to the backend
         $.ajax({
             url: 'chatbotAjax.ajaxurl',
+            // url: 'http://127.0.0.1:8000',
             type: 'POST',
             dataType: 'json',
             data: JSON.stringify({

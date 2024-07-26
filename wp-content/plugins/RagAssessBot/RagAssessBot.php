@@ -21,6 +21,8 @@ function rag_bot_scripts() {
     // Localize the script with new data
     wp_localize_script('rag-bot-script', 'chatbotAjax', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
+        'site_url' => get_site_url(),
+        
     ));
 }
 
