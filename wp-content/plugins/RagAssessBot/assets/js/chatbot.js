@@ -5,7 +5,7 @@ jQuery(document).ready(function($) {
     function sendSiteUrl(){
         $.ajax({
             url:"http://127.0.0.1:8000/site",
-            type:'GET',
+            type:'POST',
             contentType:'application/json',
             data: JSON.stringify({
                 site_url:chatbotAjax.site_url
