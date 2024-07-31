@@ -28,7 +28,7 @@ def receive_site_url(request: SiteUrlDataRequest):
         posts = extract_post_details(post_data)
 
         result = store_posts_in_vectordb(posts)
-        print("esult ",result)
+        print("Result ",result)
 
         return {"message":"Data Fetched succussfully", 'Data':result}
 
