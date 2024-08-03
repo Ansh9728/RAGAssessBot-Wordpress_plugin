@@ -1,29 +1,14 @@
-# # store data in chroma vector Database
-# import os
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-# from langchain_community.vectorstores import FAISS
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-# from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-
-# # class WeaviateServices:
-
-# #     def __init__(self) -> None:
-# #         self.client
+# store data in chroma vector Database
+import os
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 
 
 
-# # device = (
-# #     "cuda"
-# #     if torch.cuda.is_available()
-# #     else "mps"
-# #     if torch.backends.mps.is_available()
-# #     else "cpu"
-# # )
-# # print(f"Using {device} device")
-
-
-# # Embedding Model
-# # model_name = "Snowflake/snowflake-arctic-embed-l"
+# Embedding Model
+# model_name = "Snowflake/snowflake-arctic-embed-l"
 # model_name = "Snowflake/snowflake-arctic-embed-m"
 # encode_kwargs = {'normalize_embeddings': True} # set True to compute cosine similarity
 
@@ -76,9 +61,11 @@
 #     docs = text_splitter.split_documents(documents)
 #     return docs
      
+# vector_path = 'Faiss_index'
 
+def store_posts_in_vectordb(posts):
+#    curr_dir = os.getcwd()
+#    vectordb_index_path = os.path.join(curr_dir, vector_path)
+    return posts
+   
 
-# def store_posts_in_vectordb(posts):
-#    pass
-import os
-print(os.getcwd())
