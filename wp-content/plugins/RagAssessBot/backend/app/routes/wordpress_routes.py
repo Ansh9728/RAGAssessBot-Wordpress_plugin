@@ -2,8 +2,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel 
 from fastapi import HTTPException
 import json
-from services.wordpress_posts import fetch_wordpress_posts_data
-from services.wordpress_posts import extract_post_details
+from services.wordpress_posts import fetch_wordpress_posts
+from services.vectordb import get_documents
+# from services.wordpress_posts import get_post_details
 from services.vectordb import store_posts_in_vectordb
 
 
@@ -23,14 +24,16 @@ def receive_site_url(request: SiteUrlDataRequest):
     site_url = request.site_url
 
     try:
-        post_data = fetch_wordpress_posts_data(site_url)
+        wordpress_posts = fetch_wordpress_posts(site_url)
+        # print(wordpress_posts)
 
-        posts = extract_post_details(post_data)
+        documents = get_documents(wordpress_posts, site_url)
 
-        result = store_posts_in_vectordb(posts)
-        print("Result ",result)
+        embeddings = store_posts_in_vectordb(documents)
 
-        return {"message":"Data Fetched succussfully", 'Data':result}
+        print(embeddings)
+
+        return {"message":"Data Fetched succussfully", 'Data':wordpress_posts}
 
 
     except HTTPException as e:
