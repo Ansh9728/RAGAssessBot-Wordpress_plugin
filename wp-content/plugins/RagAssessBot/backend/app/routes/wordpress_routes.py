@@ -29,9 +29,7 @@ def receive_site_url(request: SiteUrlDataRequest):
 
         documents = get_documents(wordpress_posts, site_url)
 
-        embeddings = store_posts_in_vectordb(documents)
-
-        print(embeddings)
+        vector_index_loc = store_posts_in_vectordb(documents)
 
         return {"message":"Data Fetched succussfully", 'Data':wordpress_posts}
 

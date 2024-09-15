@@ -54,8 +54,9 @@ jQuery(document).ready(function($) {
 
         // Send the user message to the backend
         $.ajax({
-            url: 'chatbotAjax.ajaxurl',
+            // url: 'chatbotAjax.ajaxurl',
             // url: 'http://127.0.0.1:8000',
+            url:'http://127.0.0.1:8000/chat',
             type: 'POST',
             dataType: 'json',
             data: JSON.stringify({
