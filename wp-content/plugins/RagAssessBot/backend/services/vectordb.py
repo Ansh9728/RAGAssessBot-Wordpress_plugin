@@ -83,12 +83,9 @@ def store_posts_in_vectordb(docs):
     embedding_model = get_embedding_model(embedding_model_name)
 
     # docs_embeddings = embedding_model.embed_query(docs[0].page_content)
-
     document_chunks = create_document_chunks(docs)
 
     vector_index = save_vector_index(vector_index_path, document_chunks, embedding_model)
     print("Vector Index",vector_index)
     
     return vector_index
-
-    # return docs_embeddings

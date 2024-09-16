@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     query: str
-    context: str
 
 router = APIRouter()
 
@@ -18,6 +17,5 @@ def chat(requests: ChatRequest):
         "success":True,
         "data":{
             "response":response,
-            "context":''
         }
     }
