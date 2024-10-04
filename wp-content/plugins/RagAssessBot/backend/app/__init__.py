@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(chatbot.router)
 app.include_router(posts.router)
 app.include_router(wordpress_routes.router)
+app.include_router(wordpress_routes.router1)
 
 
 @app.get("/")
