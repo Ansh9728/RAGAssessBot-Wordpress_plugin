@@ -33,3 +33,89 @@ function rag_bot_body_container() {
     include plugin_dir_path(__FILE__) . 'templates/chatbot-template.php';
 }
 add_action('wp_body_open', 'rag_bot_body_container');
+
+
+// create table and store this data into vectordatabase
+
+register_activation_hook(__FILE__, 'langchain_document_table');
+
+function langchain_document_table(){
+    global $wpdb;
+    $table_name = $wpdb->prefix . "langchain_chunk_documents";
+    $charset_collate = $wpdb -> get_charset_collate();
+
+    $sql = "CREATE TABLE $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        title varchar(255) NOT NULL,
+        content longtext NOT NULL,
+        source_url varchar(255),
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . "wp-admin/includes/upgrade.php");
+    dbDelta($sql);
+
+}
+
+
+// create custom wordpress api
+
+add_action('rest_api_init', function(){
+    register_rest_route('store_chunk_docs/v1', '/store-document', array(
+        'method' => 'post',
+        'callback' => 'store_document_callback',
+        'permission_callback' => '__return_true',
+    ));
+});
+
+// Adjusted callback function to match the table name
+function store_document_callback(WP_REST_Request $request) {
+    global $wpdb;
+
+    // Get the posted data
+    $params = $request->get_json_params();
+    $title = sanitize_text_field($params['title']);
+    $content = wp_kses_post($params['content']);
+    $source_url = esc_url_raw($params['source_url']);
+
+    // Insert data into created table
+    $table_name = $wpdb->prefix . 'langchain_chunk_documents';
+
+    $wpdb->insert(
+        $table_name,
+        array(
+            'title' => $title,
+            'content' => $content,
+            'source_url' => $source_url,
+        ),
+        array('%s', '%s', '%s')
+    );
+
+    return new WP_REST_Response('Document stored successfully', 200);
+}
+
+
+// Register a route to fetch documents
+add_action('rest_api_init', function() {
+    register_rest_route('store_chunk_docs/v1', '/get-documents', array(
+        'methods' => 'GET',
+        'callback' => 'get_documents_callback',
+        'permission_callback' => '__return_true',
+    ));
+});
+
+function get_documents_callback(WP_REST_Request $request) {
+    global $wpdb;
+
+    $source_url = esc_url_raw($request->get_param('source_url'));
+
+    // Fetch documents matching the source_url
+    $table_name = $wpdb->prefix . 'langchain_chunk_documents';
+    $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE source_url = %s", $source_url), ARRAY_A);
+
+    if (empty($results)) {
+        return new WP_REST_Response(null, 404);
+    }
+
+    return new WP_REST_Response($results, 200);
+}

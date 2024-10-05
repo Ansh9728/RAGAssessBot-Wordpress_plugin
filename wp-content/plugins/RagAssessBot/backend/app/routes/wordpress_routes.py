@@ -1,27 +1,85 @@
-from fastapi import APIRouter
-from pydantic import BaseModel 
-from fastapi import HTTPException
-import json
-from langchain_community.vectorstores import Chroma
-from app.services.wordpress_posts import fetch_wordpress_posts
-from app.services.vectordb import get_documents, get_retriver_tool
-from app.services.vectordb import get_embedding_model
-# from services.wordpress_posts import get_post_details
-from app.services.vectordb import store_posts_in_vectordb
+# from fastapi import APIRouter
+# from pydantic import BaseModel 
+# from fastapi import HTTPException
+# from langchain_community.vectorstores import Chroma
+# from app.services.wordpress_posts import fetch_wordpress_posts
+# from app.services.vectordb import get_documents, get_retriver_tool
+# from app.services.vectordb import get_embedding_model
+# # from services.wordpress_posts import get_post_details
+# # from app.services.vectordb import store_posts_in_vectordb
+# import requests
 
+# # Model to receive site URL
+# class SiteUrlDataRequest(BaseModel):
+#     site_url: str
+
+
+# router = APIRouter(
+#     prefix="/site",
+#     tags=['sites']
+# )
+
+# def store_in_wordpress_database(site_url, title, content):
+#     url = f"{site_url}/wp-json/store_chunk_docs/v1/store-document"
+
+#     payload = {
+#         'title': title,
+#         'content': content,
+#         'source_url': site_url,
+#     }
+#     headers = {'Content-Type': 'application/json'}
+#     response = requests.post(url, json=payload, headers=headers)
+#     return response.json()
+
+
+
+# @router.post("/")
+# def receive_site_url(request: SiteUrlDataRequest):
+#     site_url = request.site_url
+
+#     try:
+#         wordpress_posts = fetch_wordpress_posts(site_url)
+
+#         documents = get_documents(wordpress_posts, site_url)
+
+#         for document in documents:
+#             title = document.metadata['title']
+#             content = document.page_content
+#             store_in_wordpress_database(site_url=site_url, title=title, content=content)
+
+#         return {"message":"Data Fetched succussfully", 'Data':wordpress_posts}
+
+
+#     except HTTPException as e:
+#         return {"message":"Failed to Fetch the Data", "details":str(e)}
+
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+import requests
+from app.services.wordpress_posts import fetch_wordpress_posts
+from app.services.vectordb import get_documents
 
 # Model to receive site URL
 class SiteUrlDataRequest(BaseModel):
     site_url: str
 
-
 router = APIRouter(
     prefix="/site",
     tags=['sites']
 )
-# we use any database for store better result
-# stored_documents = {}
-retriver_tools = []
+
+def store_in_wordpress_database(site_url, title, content):
+    url = f"{site_url}/wp-json/store_chunk_docs/v1/store-document"
+
+    payload = {
+        'title': title,
+        'content': content,
+        'source_url': site_url,
+    }
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
 
 @router.post("/")
 def receive_site_url(request: SiteUrlDataRequest):
@@ -29,33 +87,20 @@ def receive_site_url(request: SiteUrlDataRequest):
 
     try:
         wordpress_posts = fetch_wordpress_posts(site_url)
-
         documents = get_documents(wordpress_posts, site_url)
 
-        # stored_documents[site_url] = documents
+        # Store each document in the WordPress database
+        for document in documents:
+            title = document.metadata['title']
+            content = document
+            store_in_wordpress_database(site_url=site_url, title=title, content=content)
 
-        retriver = get_retriver_tool(documents)
-        retriver_tools.append(retriver)
-
-        return {"message":"Data Fetched succussfully", 'Data':wordpress_posts}
-
-
-    except HTTPException as e:
-        return {"message":"Failed to Fetch the Data", "details":str(e)}
-    
-router1 = APIRouter(
-    prefix="/tools",
-)
-
-@router1.get("/")
-def get_document_posts():
-    try:
-        tools = retriver_tools[0]
-
-        if tools is None:
-            raise HTTPException(status_code=500, detail="Tools is Not present")
-        
-        return {"Message": "Tools Found", "tools":tools}
+        return {"message": "Data fetched and stored successfully", 'Data': wordpress_posts}
 
     except HTTPException as e:
-        raise e
+        return {"message": "Failed to fetch data", "details": str(e)}
+
+def fetch_documents_from_wordpress(site_url):
+    url = f"{site_url}/wp-json/store_chunk_docs/v1/get-documents"
+    response = requests.get(url, params={'source_url': site_url})
+    return response.json()

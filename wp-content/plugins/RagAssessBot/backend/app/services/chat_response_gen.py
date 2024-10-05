@@ -13,12 +13,33 @@ from langgraph.graph import START, StateGraph, END
 from langgraph.prebuilt import ToolNode
 from langgraph.graph.message import add_messages
 import requests
-
+from .vectordb import get_retriver_tool
+from fastapi import HTTPException
 
 class AgentState(TypedDict):
   messages: Annotated[Sequence[BaseMessage], add_messages]
 
 # tools = requests.get("http://127.0.0.1:8000/tools").json.get('tools')
+
+def get_documents_from_wordpress():
+    try:
+        url = "http://localhost/RagAssessBot/wp-json/store_chunk_docs/v1/get-documents"
+        response = requests.get(url)
+        if response.status_code==200:
+            documents = response.json()
+            return documents
+        else:
+            return response.status_code
+
+    except HTTPException as e:
+        raise(str(e))
+
+
+# Check for documents
+docs = get_documents_from_wordpress()
+if docs:
+    print(docs)
+    tools = get_retriver_tool(docs)
 
 
 def grade_documents(state) -> Literal['generate', "rewrite"]:
