@@ -48,10 +48,12 @@ def get_documents(posts, site_url):
 
 
 def get_retriver_tool(docs):
-    docs_chunks = get_document_chunks(docs)
+    # docs_chunks = get_document_chunks(docs)
+    # print(docs_chunks)
     embedding_function = get_embedding_model()
+    print("final_doc for store in chroma db",docs)
 
-    vector_db = Chroma.from_documents(docs_chunks, embedding_function)
+    vector_db = Chroma.from_documents(docs, embedding_function)
     retriever = vector_db.as_retriever()
 
     retriever_tool = create_retriever_tool(

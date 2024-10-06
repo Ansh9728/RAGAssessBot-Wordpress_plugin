@@ -15,31 +15,16 @@ from langgraph.graph.message import add_messages
 import requests
 from .vectordb import get_retriver_tool
 from fastapi import HTTPException
+from ..routes.wordpress_routes import fetch_documents_from_wordpress
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+
+groq_api_key = os.getenv("GROQ_API_KEY")
 
 class AgentState(TypedDict):
   messages: Annotated[Sequence[BaseMessage], add_messages]
-
-# tools = requests.get("http://127.0.0.1:8000/tools").json.get('tools')
-
-def get_documents_from_wordpress():
-    try:
-        url = "http://localhost/RagAssessBot/wp-json/store_chunk_docs/v1/get-documents"
-        response = requests.get(url)
-        if response.status_code==200:
-            documents = response.json()
-            return documents
-        else:
-            return response.status_code
-
-    except HTTPException as e:
-        raise(str(e))
-
-
-# Check for documents
-docs = get_documents_from_wordpress()
-if docs:
-    print(docs)
-    tools = get_retriver_tool(docs)
 
 
 def grade_documents(state) -> Literal['generate', "rewrite"]:
@@ -65,7 +50,7 @@ def grade_documents(state) -> Literal['generate', "rewrite"]:
     model = ChatGroq(
         temperature=0,
         model="llama3-groq-70b-8192-tool-use-preview",
-        api_key = "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",
+        api_key = groq_api_key,
         streaming=True
     )
 
@@ -104,7 +89,7 @@ def grade_documents(state) -> Literal['generate', "rewrite"]:
 
 
 # Agent Node
-def agent(state):
+def agent(state, tools):
     """
     Invokes the agent model to generate a response based on the current state. Given
     the question, it will decide to retrieve using the retriever tool, or simply end.
@@ -122,7 +107,7 @@ def agent(state):
     model = ChatGroq(
         temperature=0,
         model="llama3-70b-8192",
-        api_key = "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",
+        api_key = groq_api_key,
         streaming=True
     )
 
@@ -165,7 +150,7 @@ def rewrite(state):
     model = ChatGroq(
         temperature=0,
         model="llama3-70b-8192",
-        api_key = "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",
+        api_key = groq_api_key,
         streaming=True
     )
 
@@ -198,7 +183,7 @@ def generate(state):
     llm = ChatGroq(
         temperature=0,
         model="llama3-70b-8192",
-        api_key = "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",
+        api_key = groq_api_key,
         streaming=True
     )
 
@@ -216,51 +201,52 @@ def generate(state):
 # print("*" * 20 + "Prompt[rlm/rag-prompt]" + "*" * 20)
 # prompt = hub.pull("rlm/rag-prompt").pretty_print()
 
+def define_graph(tools):
+    # Define a New Graph
+    workflow = StateGraph(AgentState)
 
-# Define a New Graph
-workflow = StateGraph(AgentState)
+    # Define the Node
 
-# Define the Node
-
-workflow.add_node("agent", agent)  # agent
-retrieve = ToolNode([tools])
-workflow.add_node("retrieve", retrieve)  # retrieval
-workflow.add_node("rewrite", rewrite)  # Re-writing the question
-workflow.add_node(
-    "generate", generate
-)  # Generating a response after we know the documents are relevant
-# Call agent node to decide to retrieve or not
-workflow.add_edge(START, "agent")
-
-
-workflow.add_conditional_edges(
-    "agent",
-
-    # Assess agent decision
-    tools_condition,
-    {
-        # Translate the condition outputs to nodes in our graph
-        "tools": "retrieve",
-        END: END,
-    },
-
-)
-
-# Edges taken after the `action` node is called.
-workflow.add_conditional_edges(
-    "retrieve",
-    # Assess agent decision
-    grade_documents,
-)
-
-workflow.add_edge("generate", END)
-workflow.add_edge("rewrite", "agent")
-
-# Compile
-graph = workflow.compile()
+    workflow.add_node("agent", agent(tools=tools))  # agent
+    retrieve = ToolNode([tools])
+    workflow.add_node("retrieve", retrieve)  # retrieval
+    workflow.add_node("rewrite", rewrite)  # Re-writing the question
+    workflow.add_node(
+        "generate", generate
+    )  # Generating a response after we know the documents are relevant
+    # Call agent node to decide to retrieve or not
+    workflow.add_edge(START, "agent")
 
 
-def chatbot(user_prompt):
+    workflow.add_conditional_edges(
+        "agent",
+
+        # Assess agent decision
+        tools_condition,
+        {
+            # Translate the condition outputs to nodes in our graph
+            "tools": "retrieve",
+            END: END,
+        },
+
+    )
+
+    # Edges taken after the `action` node is called.
+    workflow.add_conditional_edges(
+        "retrieve",
+        # Assess agent decision
+        grade_documents,
+    )
+
+    workflow.add_edge("generate", END)
+    workflow.add_edge("rewrite", "agent")
+
+    # Compile
+    graph = workflow.compile()
+    return graph
+
+
+def chatbot(user_prompt, graph):
     print("Welcome to the chatbot! Type 'exit' to end the conversation.")
 
     final_response = []
@@ -270,6 +256,7 @@ def chatbot(user_prompt):
             ("user", user_prompt),
         ]
     }
+    
 
     for output in graph.stream(inputs):
 
