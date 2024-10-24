@@ -47,7 +47,26 @@ def get_documents(posts, site_url):
     return documents
 
 
-def get_retriver_tool(docs):
+# def get_retriver_tool(docs):
+#     # docs_chunks = get_document_chunks(docs)
+#     # print(docs_chunks)
+#     embedding_function = get_embedding_model()
+#     print("final_doc for store in chroma db",docs)
+
+#     vector_db = Chroma.from_documents(docs, embedding_function)
+#     retriever = vector_db.as_retriever()
+
+#     retriever_tool = create_retriever_tool(
+#         retriever,
+#         "retrieve_documents",
+#         "Efficiently search and return relevant documents based on the user's query, providing accurate and timely information to support decision-making."
+#     )
+
+#     tools = [retriever_tool]
+
+#     return tools
+
+def get_retriver(docs):
     # docs_chunks = get_document_chunks(docs)
     # print(docs_chunks)
     embedding_function = get_embedding_model()
@@ -56,12 +75,4 @@ def get_retriver_tool(docs):
     vector_db = Chroma.from_documents(docs, embedding_function)
     retriever = vector_db.as_retriever()
 
-    retriever_tool = create_retriever_tool(
-        retriever,
-        "retrieve_documents",
-        "Efficiently search and return relevant documents based on the user's query, providing accurate and timely information to support decision-making."
-    )
-
-    tools = [retriever_tool]
-
-    return tools
+    return retriever
